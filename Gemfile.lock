@@ -1,0 +1,29 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    celluloid (0.15.1)
+      timers (~> 1.1.0)
+    celluloid-io (0.15.0)
+      celluloid (>= 0.15.0)
+      nio4r (>= 0.5.0)
+    http (0.5.0.pre)
+      http_parser.rb
+    http_parser.rb (0.6.0.beta.2-java)
+    nio4r (0.5.0-java)
+    reel (0.4.0.pre5)
+      celluloid (>= 0.15.0)
+      celluloid-io (>= 0.15.0)
+      http (>= 0.5.0.pre)
+      http_parser.rb (>= 0.6.0.beta.2)
+      websocket_parser (>= 0.1.4)
+    timers (1.1.0)
+    trollop (2.0)
+    websocket_parser (0.1.4)
+      http
+
+PLATFORMS
+  java
+
+DEPENDENCIES
+  reel (~> 0.4.0.pre5)
+  trollop
