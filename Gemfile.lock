@@ -1,3 +1,15 @@
+GIT
+  remote: git@github.com:CootCraig/reel.git
+  revision: 470e33de44f8fac410b1ab6c9825ede76e72f42e
+  branch: ajax_poll_already_processing
+  specs:
+    reel (0.4.0.pre7)
+      celluloid (>= 0.15.0)
+      celluloid-io (>= 0.15.0)
+      http (>= 0.5.0.pre2)
+      http_parser.rb (>= 0.6.0.beta.2)
+      websocket_parser (>= 0.1.4)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -6,16 +18,10 @@ GEM
     celluloid-io (0.15.0)
       celluloid (>= 0.15.0)
       nio4r (>= 0.5.0)
-    http (0.5.0.pre)
+    http (0.5.0.pre2)
       http_parser.rb
     http_parser.rb (0.6.0.beta.2-java)
     nio4r (0.5.0-java)
-    reel (0.4.0.pre5)
-      celluloid (>= 0.15.0)
-      celluloid-io (>= 0.15.0)
-      http (>= 0.5.0.pre)
-      http_parser.rb (>= 0.6.0.beta.2)
-      websocket_parser (>= 0.1.4)
     timers (1.1.0)
     trollop (2.0)
     websocket_parser (0.1.4)
@@ -25,5 +31,5 @@ PLATFORMS
   java
 
 DEPENDENCIES
-  reel (~> 0.4.0.pre5)
+  reel!
   trollop

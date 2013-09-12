@@ -8,7 +8,7 @@ require 'json'
 require 'date'
 
 module ReelTests
-  VERSION = '0.0.1'
+  VERSION = '0.0.2'
   APP_LOGGER = Logger.new('log.txt');
 
   Celluloid.logger = APP_LOGGER
@@ -25,6 +25,10 @@ module ReelTests
       start_channel_sources
       DistributeEvents.supervise_as(:distribute_events, @channels)
       super(@host, @port, &method(:on_connection))
+      if test_opts[:test] == :ajax_increasing
+      elsif test_opts[:test] == :ajax_long_poll
+        TestAjaxLongPoll.new(@host,@port)
+      end
     end
     def on_connection(connection)
       while request = connection.request
@@ -36,6 +40,7 @@ module ReelTests
             handle_increasing(connection)
           when '/events'
             handle_events(connection,request)
+            break
           when '/channels'
             handle_channels(connection)
           else
@@ -43,6 +48,7 @@ module ReelTests
           end
         end
       end
+      APP_LOGGER.debug "returning from on_connection"
     end
     def start_channel_sources
       @channels.each do |channel|
@@ -138,6 +144,13 @@ module ReelTests
       @channels[topic] << connection
     end
   end
+  class TestAjaxLongPoll
+    include Celluloid
+    include Celluloid::Notifications
+    def initialize(aHost,aPort)
+      ReelTests::APP_LOGGER.info "TestAjaxLongPoll starting"
+    end
+  end
 
 end
 
@@ -164,5 +177,65 @@ Celluloid::Actor[:web_server] = ReelTests::WebServer.new(test_opts)
 sleep
 
 =begin
+Notes for a gist for tarcieri or others
+At this point options :ajax_increasing and :ajax_long_poll are not useful.  The ideas is to make
+self running tests.
+My test is 
+$ jruby -S reel_test.rb
+
+Then from a browser:
+http://localhost:8091/events?channel=1
+
+In the log I see:
+D, [2013-09-11T14:21:04.524000 #2874] DEBUG -- : WebServer request method GET path /events url /events?channel=1 query_string channel=1 parsed {"channel"=>["1"]}
+E, [2013-09-11T14:21:04.529000 #2874] ERROR -- : ReelTests::WebServer crashed!
+Reel::Connection::StateError: already processing a request
+	/opt/ruby/jruby-1.7.4/lib/ruby/gems/shared/bundler/gems/reel-470e33de44f8/lib/reel/connection.rb:55:in `request'
+	reel_tests.rb:46:in `on_connection'
+	org/jruby/RubyMethod.java:134:in `call'
+	org/jruby/RubyProc.java:255:in `call'
+	/opt/ruby/jruby-1.7.4/lib/ruby/gems/shared/bundler/gems/reel-470e33de44f8/lib/reel/server.rb:32:in `handle_connection'
+	org/jruby/RubyBasicObject.java:1730:in `__send__'
+	org/jruby/RubyKernel.java:1932:in `public_send'
+	/opt/ruby/jruby-1.7.4/lib/ruby/gems/shared/gems/celluloid-0.15.1/lib/celluloid/calls.rb:25:in `dispatch'
+	/opt/ruby/jruby-1.7.4/lib/ruby/gems/shared/gems/celluloid-0.15.1/lib/celluloid/calls.rb:122:in `dispatch'
+	/opt/ruby/jruby-1.7.4/lib/ruby/gems/shared/gems/celluloid-0.15.1/lib/celluloid/actor.rb:322:in `handle_message'
+	/opt/ruby/jruby-1.7.4/lib/ruby/gems/shared/gems/celluloid-0.15.1/lib/celluloid/actor.rb:416:in `task'
+	/opt/ruby/jruby-1.7.4/lib/ruby/gems/shared/gems/celluloid-0.15.1/lib/celluloid/tasks.rb:55:in `initialize'
+	/opt/ruby/jruby-1.7.4/lib/ruby/gems/shared/gems/celluloid-0.15.1/lib/celluloid/tasks/task_fiber.rb:13:in `create'
+W, [2013-09-11T14:21:04.531000 #2874]  WARN -- : Terminating task: type=:call, meta={:method_name=>:run}, status=:iowait
+
+=end
+
+=begin
+Craig's notes:
+
+This looks promising, when we detach the connection the request(?) should
+be set as ready to respond.
+
+--- dev/reel/lib/reel/request_parser.rb
+# Mark current request as complete, set this as ready to respond.
+def on_message_complete
+  @currently_reading.finish_reading! if @currently_reading.is_a?(Request)
+  if @currently_responding.nil?
+    @currently_responding = @currently_reading
+  else
+    @pending_responses << @currently_reading
+  end
+  @currently_reading = @pending_reads.shift
+end
+
+So what calls #on_message_complete ?
+
+--- dev/reel/lib/reel/request_parser.rb
+module Reel
+  class Request
+    class Parser
+      def initialize(sock, conn)
+        @parser = Http::Parser.new(self)
+
+gem "http_parser.rb", "~> 0.5.3"
+Ruby bindings to http://github.com/ry/http-parser and http://github.com/a2800276/http-parser.java
+
 =end
 
